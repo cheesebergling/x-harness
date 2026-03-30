@@ -128,9 +128,15 @@ tweetsRouter.post('/schedule', async (c) => {
   }
 
   const scheduledAt = new Date(body.scheduled_at);
+  if (isNaN(scheduledAt.getTime())) {
+    return c.json({ error: 'Invalid date format' }, 400);
+  }
   if (scheduledAt <= new Date()) {
     return c.json({ error: 'scheduled_at must be in the future' }, 400);
   }
+
+  // Normalize to UTC ISO string so Cron scheduler (which uses UTC) can compare correctly
+  const scheduledAtUtc = scheduledAt.toISOString();
 
   const text = isThread ? body.tweets![0] : body.text!;
   const tweetsJson = isThread ? JSON.stringify(body.tweets) : null;
@@ -140,7 +146,7 @@ tweetsRouter.post('/schedule', async (c) => {
   ).bind(
     text,
     body.media_ids ? JSON.stringify(body.media_ids) : null,
-    body.scheduled_at,
+    scheduledAtUtc,
     'pending',
     tweetsJson
   ).run();
@@ -182,7 +188,7 @@ tweetsRouter.put('/scheduled/:id', async (c) => {
       return c.json({ error: 'scheduled_at must be a valid future date' }, 400);
     }
     updates.push('scheduled_at = ?');
-    values.push(body.scheduled_at);
+    values.push(d.toISOString()); // Normalize to UTC
   }
   if (body.tweets !== undefined) {
     updates.push('thread_tweets = ?');
@@ -298,9 +304,12 @@ tweetsRouter.post('/schedule-action', async (c) => {
     return c.json({ error: 'scheduled_at must be a valid future date' }, 400);
   }
 
+  // Normalize to UTC ISO string so Cron scheduler can compare correctly
+  const scheduledAtUtc = scheduledAt.toISOString();
+
   await c.env.DB.prepare(
     'INSERT INTO scheduled_actions (action_type, target_tweet_id, scheduled_at) VALUES (?, ?, ?)'
-  ).bind(body.action_type, body.target_tweet_id, body.scheduled_at).run();
+  ).bind(body.action_type, body.target_tweet_id, scheduledAtUtc).run();
 
   return c.json({ success: true, scheduled_at: body.scheduled_at, action_type: body.action_type });
 });

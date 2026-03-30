@@ -320,7 +320,7 @@ export async function scheduleTweet(
     method: 'POST',
     body: JSON.stringify({
       text: sanitized,
-      scheduled_at: scheduledAt,
+      scheduled_at: scheduledDate.toISOString(), // Always send UTC
       media_ids: mediaIds,
       tweets: tweets?.map(t => sanitizeInput(t)),
     }),
@@ -488,7 +488,7 @@ export async function scheduleAction(
     body: JSON.stringify({
       action_type: actionType,
       target_tweet_id: targetTweetId,
-      scheduled_at: scheduledAt,
+      scheduled_at: d.toISOString(), // Always send UTC
     }),
   });
 }
