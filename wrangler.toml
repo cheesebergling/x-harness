@@ -1,0 +1,36 @@
+name = "x-harness"
+main = "src/index.ts"
+compatibility_date = "2026-03-28"
+
+[vars]
+ENVIRONMENT = "production"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "x-harness-db"
+database_id = "48cfb0b9-13a4-4fb7-8862-53ea4104d1e1"
+migrations_dir = "src/db/migrations"
+
+# R2 (Media uploads — uncomment after enabling R2 in Cloudflare Dashboard)
+# [[r2_buckets]]
+# binding = "MEDIA"
+# bucket_name = "x-harness-media"
+
+# Uncomment after Cloudflare login
+# [ai]
+# binding = "AI"
+
+# Cron Triggers — process scheduled tweets/actions every 5 minutes
+[triggers]
+crons = ["*/5 * * * *"]
+
+# Queue (replaced by Cron Triggers above)
+# [[queues.producers]]
+# queue = "x-harness-scheduler"
+# binding = "SCHEDULER"
+#
+# [[queues.consumers]]
+# queue = "x-harness-scheduler"
+# max_batch_size = 10
+# max_batch_timeout = 30
+

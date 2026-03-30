@@ -1,0 +1,28 @@
+{
+  "name": "x-harness",
+  "version": "0.1.0",
+  "description": "Open-source X (Twitter) API toolkit powered by Cloudflare Workers",
+  "keywords": ["x-api", "twitter", "cloudflare-workers", "mcp", "automation", "sns"],
+  "author": "cheesebergling",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cheesebergling/x-harness.git"
+  },
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:migrate": "wrangler d1 migrations apply x-harness-db --local",
+    "db:migrate:prod": "wrangler d1 migrations apply x-harness-db",
+    "dashboard:dev": "cd dashboard && npm run dev",
+    "dashboard:build": "cd dashboard && npm run build"
+  },
+  "dependencies": {
+    "hono": "^4.7.0",
+    "oauth-1.0a": "^2.2.6"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260301.0",
+    "wrangler": "^4.0.0",
+    "typescript": "^5.7.0"
+  }
+}

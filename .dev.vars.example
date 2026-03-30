@@ -1,0 +1,17 @@
+# x-harness 環境変数テンプレート
+# このファイルを .dev.vars にコピーして値を設定してください
+#   cp .dev.vars.example .dev.vars
+
+# ─── Required ───────────────────────────────────────
+
+# Worker への認証用 API キー（任意の安全な文字列を生成）
+# 生成例: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+HARNESS_API_KEY=change-me-to-a-secure-random-string
+
+# X Developer Portal から取得
+X_CLIENT_ID=your_x_client_id
+X_CLIENT_SECRET=your_x_client_secret
+
+# OAuth 2.0 コールバック URL
+# デプロイ先のWorker URLに合わせて変更
+X_CALLBACK_URL=https://x-harness.YOUR_SUB.workers.dev/api/auth/callback
