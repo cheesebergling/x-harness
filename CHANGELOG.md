@@ -11,13 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - DM caching system with D1 storage for reduced API costs
 - Batch AI bookmark analysis (up to 100 items)
 - Enhanced AI skill extraction with GitHub/AI-tool pattern detection
-- Configurable workflow templates for DM automation
 - File System Access API integration for local sync
 - GitHub Actions CI workflow
+
+### Fixed
+- Scheduled posts/actions timezone mismatch — `scheduled_at` now normalized to UTC ISO string
 
 ### Changed
 - Improved DM template and auto-reply error handling via database migration
 - Upgraded stealth mode with enhanced ghost character patterns
+- Workflow automation feature deferred to next release
 
 ## [0.7.0] - 2026-03-29
 

@@ -37,14 +37,15 @@ interface Skill {
   actionable: boolean;
 }
 
-interface Workflow {
-  id: number;
-  title: string;
-  description: string;
-  steps: string;
-  required_skills: string;
-  status: string;
-}
+// TODO: ワークフロー機能は次期アップデートで搭載予定
+// interface Workflow {
+//   id: number;
+//   title: string;
+//   description: string;
+//   steps: string;
+//   required_skills: string;
+//   status: string;
+// }
 
 // ─── Security: XSS-safe embed loader ────────────────────────
 // Only allow numeric tweet IDs to prevent injection
@@ -258,18 +259,14 @@ export function BookmarksPage({ showToast }: BookmarksPageProps) {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [skills, setSkills] = useState<Skill[]>([]);
-  const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [activeFolder, setActiveFolder] = useState<number | null>(null);
-  const [tab, setTab] = useState<'bookmarks' | 'skills' | 'workflows'>('bookmarks');
+  const [tab, setTab] = useState<'bookmarks' | 'skills'>('bookmarks');
   const [syncing, setSyncing] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [extracting, setExtracting] = useState(false);
-  const [generating, setGenerating] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [showFolderCreator, setShowFolderCreator] = useState(false);
   const [expandedEmbeds, setExpandedEmbeds] = useState<Set<number>>(new Set());
-  const [wfTemplates, setWfTemplates] = useState<any[]>([]);
-  const [writingRules, setWritingRules] = useState<any[]>([]);
 
   const toggleEmbed = (id: number) => {
     setExpandedEmbeds((prev) => {
@@ -286,16 +283,10 @@ export function BookmarksPage({ showToast }: BookmarksPageProps) {
       api.getBookmarkFolders(),
       api.getBookmarks(folderId),
       api.getSkills(),
-      api.getWorkflows(),
-      api.getWorkflowTemplates(),
-      api.getWritingRules(),
     ]);
     if (results[0].status === 'fulfilled') setFolders(results[0].value.data || []);
     if (results[1].status === 'fulfilled') setBookmarks(results[1].value.data || []);
     if (results[2].status === 'fulfilled') setSkills(results[2].value.data || []);
-    if (results[3].status === 'fulfilled') setWorkflows(results[3].value.data || []);
-    if (results[4].status === 'fulfilled') setWfTemplates(results[4].value.data || []);
-    if (results[5].status === 'fulfilled') setWritingRules(results[5].value.data || []);
     const failed = results.filter(r => r.status === 'rejected');
     if (failed.length > 0 && failed.length < results.length) {
       showToast('info', '一部のデータ取得に失敗しました');
@@ -348,29 +339,6 @@ export function BookmarksPage({ showToast }: BookmarksPageProps) {
     }
   };
 
-  const handleGenerateWorkflows = async () => {
-    setGenerating(true);
-    try {
-      const res = await api.generateWorkflows();
-      showToast('success', `${res.generated} 件のワークフローを生成しました`);
-      loadAll(activeFolder ?? undefined);
-    } catch (e: any) {
-      showToast('error', e.message);
-    } finally {
-      setGenerating(false);
-    }
-  };
-
-  const handleWorkflowAction = async (id: number, status: 'approved' | 'rejected') => {
-    try {
-      await api.updateWorkflowStatus(id, status);
-      showToast('success', status === 'approved' ? 'ワークフローを承認しました' : 'ワークフローを却下しました');
-      loadAll(activeFolder ?? undefined);
-    } catch (e: any) {
-      showToast('error', e.message);
-    }
-  };
-
   const handleExport = () => {
     window.open('/api/bookmarks/export', '_blank');
   };
@@ -383,10 +351,6 @@ export function BookmarksPage({ showToast }: BookmarksPageProps) {
 
   const parseTags = (json?: string): string[] => {
     if (!json) return [];
-    try { return JSON.parse(json); } catch { return []; }
-  };
-
-  const parseSteps = (json: string): { order: number; action: string; details: string }[] => {
     try { return JSON.parse(json); } catch { return []; }
   };
 
@@ -421,9 +385,11 @@ export function BookmarksPage({ showToast }: BookmarksPageProps) {
         <button className={`tab-btn ${tab === 'skills' ? 'tab-btn--active' : ''}`} onClick={() => setTab('skills')}>
           🧠 スキル ({skills.length})
         </button>
+        {/* ワークフロー機能は次期アップデートで搭載予定
         <button className={`tab-btn ${tab === 'workflows' ? 'tab-btn--active' : ''}`} onClick={() => setTab('workflows')}>
           ⚙️ ワークフロー ({workflows.length})
         </button>
+        */}
       </div>
 
       {tab === 'bookmarks' && (
@@ -577,130 +543,7 @@ export function BookmarksPage({ showToast }: BookmarksPageProps) {
         </div>
       )}
 
-      {tab === 'workflows' && (
-        <div className="workflows-section">
-          {/* Template Cards */}
-          <h3 style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-            📋 ワークフローテンプレート
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontWeight: 400 }}>
-              ON/OFF で有効化
-            </span>
-          </h3>
-          {wfTemplates.length > 0 ? (
-            <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', marginBottom: 32 }}>
-              {wfTemplates.map((tpl: any) => {
-                const steps = parseSteps(tpl.steps);
-                const isPostCreation = ['news_to_quote', 'marketing_to_thread'].includes(tpl.category);
-                return (
-                  <div key={tpl.id} className={`wf-template-card ${tpl.enabled ? 'wf-template-card--enabled' : ''}`}>
-                    <div className="wf-template-card__header">
-                      <span className="wf-template-card__title">{tpl.name}</span>
-                      <label className="toggle-switch">
-                        <input
-                          type="checkbox"
-                          checked={!!tpl.enabled}
-                          onChange={async () => {
-                            try {
-                              await api.updateWorkflowTemplate(tpl.id, { enabled: !tpl.enabled });
-                              setWfTemplates(prev => prev.map(t => t.id === tpl.id ? { ...t, enabled: !t.enabled } : t));
-                              showToast('success', tpl.enabled ? '無効化しました' : '有効化しました');
-                            } catch (e: any) { showToast('error', e.message); }
-                          }}
-                        />
-                        <span className="toggle-switch__slider" />
-                      </label>
-                    </div>
-                    <div className="wf-template-card__desc">{tpl.description}</div>
-                    <ul className="wf-template-card__steps">
-                      {steps.map((s) => (
-                        <li key={s.order} className="wf-template-card__step">
-                          <span className="wf-template-card__step-num">{s.order}</span>
-                          <div><strong>{s.action}</strong> — {s.details}</div>
-                        </li>
-                      ))}
-                    </ul>
-                    {isPostCreation && (
-                      <div className="wf-template-card__footer">
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>✍️ ライティングルール:</span>
-                        <select
-                          className="form-select form-input--sm"
-                          style={{ flex: 1, maxWidth: 200 }}
-                          value={tpl.writing_rule_id || ''}
-                          onChange={async (e) => {
-                            const ruleId = e.target.value ? Number(e.target.value) : null;
-                            try {
-                              await api.updateWorkflowTemplate(tpl.id, { writing_rule_id: ruleId });
-                              setWfTemplates(prev => prev.map(t => t.id === tpl.id ? { ...t, writing_rule_id: ruleId } : t));
-                            } catch (er: any) { showToast('error', er.message); }
-                          }}
-                        >
-                          <option value="">指定なし</option>
-                          {writingRules.map((r: any) => (
-                            <option key={r.id} value={r.id}>{r.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="empty-state" style={{ marginBottom: 32 }}>
-              <p>📋 テンプレートがありません（マイグレーション適用後に表示されます）</p>
-            </div>
-          )}
-
-          {/* AI-Generated Workflows */}
-          <h3 style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-            🤖 AI生成ワークフロー
-          </h3>
-          <div className="action-bar" style={{ marginBottom: '1rem' }}>
-            <button className="btn btn--primary" onClick={handleGenerateWorkflows} disabled={generating}>
-              {generating ? '⏳ 生成中...' : '⚙️ ワークフロー生成'}
-            </button>
-          </div>
-          {workflows.length === 0 ? (
-            <div className="empty-state">
-              <p>⚙️ AI生成ワークフローはありません</p>
-              <p>スキルを抽出してからワークフロー生成を実行してください</p>
-            </div>
-          ) : (
-            workflows.map((wf) => (
-              <div key={wf.id} className={`workflow-card workflow-card--${wf.status}`}>
-                <div className="workflow-card__header">
-                  <h4>{wf.title}</h4>
-                  <span className={`badge badge--wf-${wf.status}`}>
-                    {wf.status === 'suggested' ? '🔔 提案' : wf.status === 'approved' ? '✅ 承認済み' : '❌ 却下'}
-                  </span>
-                </div>
-                <p className="workflow-card__desc">{wf.description}</p>
-                <div className="workflow-card__steps">
-                  {parseSteps(wf.steps).map((step) => (
-                    <div key={step.order} className="workflow-step">
-                      <span className="workflow-step__number">{step.order}</span>
-                      <div>
-                        <strong>{step.action}</strong>
-                        <p>{step.details}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {wf.status === 'suggested' && (
-                  <div className="workflow-card__actions">
-                    <button className="btn btn--primary btn--sm" onClick={() => handleWorkflowAction(wf.id, 'approved')}>
-                      ✅ 承認
-                    </button>
-                    <button className="btn btn--ghost btn--sm" onClick={() => handleWorkflowAction(wf.id, 'rejected')}>
-                      ❌ 却下
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
-      )}
+      {/* ワークフロー機能は次期アップデートで搭載予定 */}
     </div>
   );
 }

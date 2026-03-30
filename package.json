@@ -1,6 +1,6 @@
 {
   "name": "x-harness",
-  "version": "0.1.0",
+  "version": "0.8.0",
   "description": "Open-source X (Twitter) API toolkit powered by Cloudflare Workers",
   "keywords": ["x-api", "twitter", "cloudflare-workers", "mcp", "automation", "sns"],
   "author": "cheesebergling",
